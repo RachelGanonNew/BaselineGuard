@@ -1,0 +1,47 @@
+name: Docker CI - Build Circom & Run Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Run Docker-based circom + snarkjs pipeline
+        uses: addnab/docker-run-action@v4
+        with:
+          image: node:18-bullseye
+          options: --privileged
+          run: |
+            set -e
+            apt-get update && apt-get install -y git make build-essential python3 curl
+            npm ci
+            # Install snarkjs globally for deterministic CLI
+            npm i -g snarkjs@0.7.5
+            # Use the project's helper script to build circuits and run the pipeline
+            chmod +x ci/run_e2e.sh
+            ./ci/run_e2e.sh
+
+      - name: Run unit tests
+        uses: addnab/docker-run-action@v4
+        with:
+          image: node:18-bullseye
+          run: |
+            set -e
+            npm ci
+            npm test --silent
+
+      - name: Upload artifacts (circuits build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuits-build
+          path: circuits/build

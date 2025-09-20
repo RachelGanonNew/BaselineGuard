@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>BaselineGuard Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; }
+    textarea { width:100%; height:80px }
+    pre { background:#f6f8fa; padding:1rem }
+    .col { display:flex; gap:1rem }
+    .card { padding:1rem; border:1px solid #ddd; border-radius:6px; flex:1 }
+  </style>
+</head>
+<body>
+  <h1>BaselineGuard Demo</h1>
+  <div class="col">
+    <div class="card">
+      <h3>Create Claim (Supplier)</h3>
+      <div>
+        <label>Role: <select id="role"><option>supplier</option><option>buyer</option></select></label>
+      </div>
+      <input id="supplierId" placeholder="supplier-123" />
+      <textarea id="claimData" placeholder='{"cert":"ISO9001","emissions":42}'></textarea>
+      <div style="margin-top:8px">
+        <button id="fetchERP">Fetch from ERP (stub)</button>
+        <button id="create">Create Claim</button>
+      </div>
+      <pre id="claimOut"></pre>
+    </div>
+    <div class="card">
+      <h3>Prove & Verify (Buyer)</h3>
+      <button id="prove">Generate Proof</button>
+      <button id="verify">Verify Proof</button>
+      <pre id="proofOut"></pre>
+    </div>
+  </div>
+  <h3>Proof & Public Signals</h3>
+  <pre id="proofPublic"></pre>
+  <h3>Audit Ledger</h3>
+  <pre id="ledger"></pre>
+
+  <script>
+    let lastClaim = null;
+    let lastProof = null;
+
+    document.getElementById('create').onclick = async () => {
+      const supplierId = document.getElementById('supplierId').value || 'supplier-1';
+      const data = JSON.parse(document.getElementById('claimData').value || '{}');
+      const res = await fetch('/claim', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ supplierId, data }) });
+      lastClaim = await res.json();
+      document.getElementById('claimOut').textContent = JSON.stringify(lastClaim, null, 2);
+    }
+
+    document.getElementById('prove').onclick = async () => {
+      if (!lastClaim) return alert('create a claim first');
+      const res = await fetch('/prove', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ claim: lastClaim }) });
+      const body = await res.json();
+      lastProof = body.proofBundle || body.proof || null;
+      document.getElementById('proofOut').textContent = JSON.stringify(body, null, 2);
+    }
+
+    document.getElementById('verify').onclick = async () => {
+      if (!lastClaim || !lastProof) return alert('create claim and proof first');
+      const onChain = document.getElementById('onChain').checked;
+      const res = await fetch('/verify', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ claim: lastClaim, proof: lastProof, verifier: 'buyer-1', onChain }) });
+      const body = await res.json();
+      document.getElementById('proofOut').textContent = JSON.stringify(body, null, 2);
+      refreshLedger();
+    }
+
+    // add an on-chain checkbox UI
+    const verifyCard = document.querySelector('.card:nth-child(2)');
+    const cb = document.createElement('div');
+    cb.innerHTML = '<label><input type="checkbox" id="onChain"/> Verify on-chain (requires local Hardhat node)</label>';
+    verifyCard.appendChild(cb);
+
+    async function refreshLedger() {
+      const res = await fetch('/audit');
+      const body = await res.json();
+      document.getElementById('ledger').textContent = JSON.stringify(body, null, 2);
+    }
+
+    refreshLedger();
+  </script>
+</body>
+</html>

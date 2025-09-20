@@ -1,0 +1,33 @@
+name: BaselineGuard e2e
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install deps
+        run: npm ci
+      - name: Compile circom circuit (Docker)
+        run: docker run --rm -v ${{ github.workspace }}:/work -w /work ekzhang/circom:latest circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
+      - name: Setup zkey and export verifier
+        run: |
+          npm run setup:zkey
+          npm run export:verifier
+      - name: Start Hardhat node
+        run: npx hardhat node &
+      - name: Deploy verifier
+        run: npm run deploy:local
+      - name: Generate proof
+        run: npm run generate:proof -- 5
+      - name: Run tests
+        run: npm test
