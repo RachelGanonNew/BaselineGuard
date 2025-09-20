@@ -1,5 +1,4 @@
-pragma circom 2.0.0;
-
+// pragma removed as workaround for parser issues in some circom npm builds
 template Square() {
     signal input in;
     signal output out;
