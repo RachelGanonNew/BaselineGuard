@@ -17,10 +17,9 @@ jobs:
           node-version: '18'
       - name: Install deps
         run: npm ci
-      - name: Compile circom circuit (Docker)
+      - name: Compile circom circuit (npx)
         run: |
-          docker run --rm -v ${{ github.workspace }}:/work -w /work iden3/circom:latest \
-            circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
+          npx circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
       - name: Setup zkey and export verifier
         run: |
           npm run setup:zkey

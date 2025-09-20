@@ -32,45 +32,25 @@ jobs:
           npm ci
           npm i -g snarkjs@0.7.5
 
-      - name: Build circuit and run pipeline (Docker-first with fallback)
+      - name: Build circuit with npx circom
         run: |
           set -e
           chmod +x ci/run_e2e.sh
-          IMAGE=iden3/circom:latest
-          echo "Trying to pull $IMAGE..."
-          if docker pull "$IMAGE"; then
-            echo "Pulled $IMAGE — running pipeline inside container"
-            # mount workspace and run build inside the container
-            docker run --rm -v "$PWD:/work" -w /work "$IMAGE" circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
-            # continue zkey and verifier steps on the runner (snarkjs is installed globally above)
-            pushd circuits/build
-            if [ ! -f powersOfTau28_hez_final_10.ptau ]; then
-              curl -sSLo powersOfTau28_hez_final_10.ptau https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau
-            fi
-            snarkjs groth16 setup square.r1cs powersOfTau28_hez_final_10.ptau square_0000.zkey
-            snarkjs zkey contribute square_0000.zkey square_final.zkey --name="build-and-contribute" -v
-            snarkjs zkey export verificationkey square_final.zkey verification_key.json
-            snarkjs zkey export solidityverifier square_final.zkey ../../contracts/Verifier.sol
-            popd
-          else
-            echo "Could not pull $IMAGE — falling back to local npx circom if available"
-            if command -v npx >/dev/null 2>&1; then
-              npx circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
-            else
-              echo "No Docker image and no npx circom available — failing CI."
-              exit 125
-            fi
-            # then continue with zkey steps as above
-            pushd circuits/build
-            if [ ! -f powersOfTau28_hez_final_10.ptau ]; then
-              curl -sSLo powersOfTau28_hez_final_10.ptau https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau
-            fi
-            snarkjs groth16 setup square.r1cs powersOfTau28_hez_final_10.ptau square_0000.zkey
-            snarkjs zkey contribute square_0000.zkey square_final.zkey --name="build-and-contribute" -v
-            snarkjs zkey export verificationkey square_final.zkey verification_key.json
-            snarkjs zkey export solidityverifier square_final.zkey ../../contracts/Verifier.sol
-            popd
+          # prefer npx circom on runner (install circom via npm if not present)
+          if ! command -v npx >/dev/null 2>&1; then
+            echo "npx not found"
+            exit 1
           fi
+          npx circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
+          pushd circuits/build
+          if [ ! -f powersOfTau28_hez_final_10.ptau ]; then
+            curl -sSLo powersOfTau28_hez_final_10.ptau https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau
+          fi
+          snarkjs groth16 setup square.r1cs powersOfTau28_hez_final_10.ptau square_0000.zkey
+          snarkjs zkey contribute square_0000.zkey square_final.zkey --name="build-and-contribute" -v
+          snarkjs zkey export verificationkey square_final.zkey verification_key.json
+          snarkjs zkey export solidityverifier square_final.zkey ../../contracts/Verifier.sol
+          popd
 
       - name: Run unit tests (node)
         run: |
