@@ -1,0 +1,37 @@
+name: Circom Debug
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  debug-circom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Show circom version (npx)
+        run: |
+          npx --no-install circom --version || true
+
+      - name: Print circuit file (visible)
+        run: |
+          echo '--- file start ---'
+          sed -n '1,120p' circuits/square.circom || true
+          echo '--- file end ---'
+
+      - name: Hex dump first 256 bytes of circuit
+        run: |
+          echo '--- hex dump ---'
+          head -c 256 circuits/square.circom | xxd || true
+
+      - name: Run circom compile (npx)
+        run: |
+          set -o pipefail
+          npx --yes circom circuits/square.circom --r1cs --wasm -o circuits/build 2>&1 | sed -n '1,200p' || true

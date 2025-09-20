@@ -63,11 +63,23 @@ app.post('/verify', (req, res) => {
   const doOnChain = process.env.VERIFY_ON_CHAIN === '1';
   const verifyPromise = (async () => {
     try {
-      return doOnChain ? await zk.verifyProofOnChain(proof, claim) : await zk.verifyProofLocal(proof);
+      if (doOnChain) {
+        if (zk.verifyProofOnChain) return await zk.verifyProofOnChain(proof, claim);
+        if (zkFallback.verifyProofOnChain) return await zkFallback.verifyProofOnChain(proof, claim);
+        throw new Error('No on-chain verifier available');
+      } else {
+        // prefer verifyProofLocal, otherwise fall back to legacy verifyProof (stub)
+        if (zk.verifyProofLocal) return await zk.verifyProofLocal(proof);
+        if (zk.verifyProof) return await zk.verifyProof(proof, claim);
+        if (zkFallback.verifyProofLocal) return await zkFallback.verifyProofLocal(proof);
+        if (zkFallback.verifyProof) return await zkFallback.verifyProof(proof, claim);
+        throw new Error('No local verifier available');
+      }
     } catch (err) {
       // fallback to stub verifier when artifacts missing
       if (err && String(err).match(/Missing verification_key.json|circuits\/build not found/)) {
-        return zkFallback.verifyProofLocal(proof);
+        if (zkFallback.verifyProof) return zkFallback.verifyProof(proof, claim);
+        if (zkFallback.verifyProofLocal) return zkFallback.verifyProofLocal(proof);
       }
       throw err;
     }

@@ -11,10 +11,10 @@
     "export:verifier": "snarkjs zkey export solidityverifier circuits/build/square_final.zkey contracts/Verifier.sol",
     "generate:proof": "node scripts/generate_proof.js",
     "deploy:local": "hardhat run --network localhost scripts/deploy.js",
-    "e2e": "npm run build:circuit && npm run setup:zkey && npm run export:verifier && npm run deploy:local"
-  ,"ci:local": "bash ./ci/run_e2e.sh"
-  ,"ci:docker": "docker run --rm -v \"$PWD:/work\" -w /work node:18-bullseye bash -lc \"npm ci && chmod +x ci/run_e2e.sh && ./ci/run_e2e.sh\""
-  ,"ci:windows": "powershell -ExecutionPolicy Bypass -File ./ci/run_e2e.ps1"
+    "e2e": "npm run build:circuit && npm run setup:zkey && npm run export:verifier && npm run deploy:local",
+    "ci:local": "bash ./ci/run_e2e.sh",
+    "ci:docker": "docker run --rm -v \"$PWD:/work\" -w /work node:18-bullseye bash -lc \"npm ci && chmod +x ci/run_e2e.sh && ./ci/run_e2e.sh\"",
+    "ci:windows": "powershell -ExecutionPolicy Bypass -File ./ci/run_e2e.ps1"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
