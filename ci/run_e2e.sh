@@ -17,7 +17,7 @@ echo "Compiling Circom circuit (circuits/square.circom)"
 if command -v circom >/dev/null 2>&1; then
 	circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
 elif docker --version >/dev/null 2>&1; then
-	docker run --rm -v "$ROOT:/work" -w /work ekzhang/circom:latest circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
+		docker run --rm -v "$ROOT:/work" -w /work iden3/circom:latest circom circuits/square.circom --r1cs --wasm --sym -o circuits/build
 else
 	echo "No circom binary or Docker available. Please install circom or Docker, or run this in CI where Docker is available."
 	exit 2
