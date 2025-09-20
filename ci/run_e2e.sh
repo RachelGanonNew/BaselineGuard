@@ -25,9 +25,33 @@ fi
 
 cd circuits/build
 
-if [ ! -f powersOfTau28_hez_final_10.ptau ]; then
-	echo "Downloading ptau..."
-	curl -sSLo powersOfTau28_hez_final_10.ptau https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau
+PTAU_URL="https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_10.ptau"
+PTAU_FILE="powersOfTau28_hez_final_10.ptau"
+EXPECTED_SHA256="REPLACE_WITH_TRUSTED_SHA256"
+
+download_ptau() {
+	echo "Downloading PTau from $PTAU_URL"
+	curl -fsSL -o "$PTAU_FILE" "$PTAU_URL" || return 1
+}
+
+if [ ! -f "$PTAU_FILE" ]; then
+	download_ptau || { echo "PTau download failed"; exit 1; }
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+	ACTUAL_SHA256=$(sha256sum "$PTAU_FILE" | awk '{print $1}')
+else
+	ACTUAL_SHA256=$(openssl dgst -sha256 "$PTAU_FILE" | awk '{print $2}')
+fi
+
+if [ "$EXPECTED_SHA256" = "REPLACE_WITH_TRUSTED_SHA256" ]; then
+	echo "WARNING: PTAU checksum not configured. Set EXPECTED_SHA256 in this script to enforce verification."
+else
+	if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+		echo "PTau checksum mismatch (got $ACTUAL_SHA256, expected $EXPECTED_SHA256). Removing file and aborting."
+		rm -f "$PTAU_FILE"
+		exit 2
+	fi
 fi
 
 if [ ! -f square_final.zkey ]; then

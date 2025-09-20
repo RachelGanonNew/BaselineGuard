@@ -1,2 +1,6 @@
 node_modules/
 data/
+
+# Ignore powers-of-tau ptau files
+powersOfTau28_hez_final_10.ptau
+circuits/build/powersOfTau28_hez_final_10.ptau
