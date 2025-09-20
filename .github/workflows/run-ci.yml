@@ -1,0 +1,22 @@
+name: Run CI script
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  run-ci-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Make CI script executable
+        run: |
+          chmod +x ci/run_e2e.sh
+      - name: Run CI script
+        run: |
+          set -euo pipefail
+          ./ci/run_e2e.sh
