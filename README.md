@@ -1,3 +1,5 @@
+![CI](https://github.com/RachelGanonNew/BaselineGuard/actions/workflows/docker-ci.yml/badge.svg)
+
 BaselineGuard — Baseline Protocol demo prototype
 
 This repository contains a small prototype demonstrating a Baseline Protocol-aligned idea: suppliers can create compliance claims, generate zero-knowledge-style proofs (stubbed), and verifiers can verify proofs and write audit entries to an on-disk ledger.
@@ -14,6 +16,13 @@ cd C:\Users\USER\BaselineGuard
 npm install
 npm test
 npm start
+```
+
+Alternatively, run the Docker-based CI locally (requires Docker Desktop):
+
+```powershell
+# Run the Docker-based CI which builds the circuit and runs tests
+npm run ci:docker
 ```
 
 ZKP + on-chain (Circom + snarkjs + Hardhat)
